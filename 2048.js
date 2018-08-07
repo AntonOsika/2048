@@ -1,10 +1,19 @@
 boxes = []
+hipsterCount = 0;
 
-function nEmpty() {
+function setup() {
+    // Sets the screen to be 720 pixels wide and 400 pixels high
+    createCanvas(720, 720);
+    resetState()
+
+    // main()
+}
+
+function nEmpty(b) {
     var n = 0
     for (var i = 0; i < 4; i++) {
         for (var j = 0; j < 4; j++) {
-            if (boxes[i][j] == 0) {
+            if (b[i][j] == 0) {
                 n++
             }
         }
@@ -13,7 +22,6 @@ function nEmpty() {
 }
 
 function addBox() {
-
     boxIdx = int(random() * nEmpty(boxes))
     counter = 0
     for (var i = 0; i < 4; i++) {
@@ -34,9 +42,7 @@ function addBox() {
     }
 }
 
-function setup() {
-    // Sets the screen to be 720 pixels wide and 400 pixels high
-    createCanvas(720, 720);
+function resetState() {
     for (var i = 0; i < 4; i++) {
         boxes[i] = []
         for (var j = 0; j < 4; j++) {
@@ -45,14 +51,28 @@ function setup() {
     }
     addBox()
     addBox()
-    main()
+}
+
+function rm() {
+    setTimeout(rm, 100)
+    randomMove()
+}
+
+function ym() {
+    setTimeout(ym, 100)
+    yoloMove()
+}
+
+function hm() {
+    setTimeout(hm, 50)
+    hipsterMove()
 }
 
 function numberToColor(number) {
     colors = ['rgba(238, 228, 218, 0.35)', '#eee4da', '#ede0c8', '#f2b179', '#f59563', '#f65e3b', '#edcf72', '#edc850', '#edc900', '#edc950']
 
     if (log(number)/log(2) > (colors.length-1)) {
-        return ["#ccccccc"]
+        return "#ccccccc"
     }
 
     else {
@@ -71,17 +91,15 @@ function canMove() {
         for (var j = 0; j < 4; j++) {
             for (var neighbour = 0; neighbour < 4; neighbour++) {
                 currentNeighbour=neighbours[neighbour]
-                try {
-                    if (boxes[i][j]==boxes[i+currectNeighbour[0]][j+currentNeighbour[1]]) {
+                if (i+currentNeighbour[0]>0 && i+currentNeighbour[0]<4 && j+currentNeighbour[1]>0 && j+currentNeighbour[1]<4) {
+                    if (boxes[i][j]==boxes[i+currentNeighbour[0]][j+currentNeighbour[1]]) {
                         hasNeighbour++
                     }
-                } catch (error) {
-
                 }
             }
         }
     }
-    return (nEmpty>0 || hasNeighbour>0)
+    return (nEmpty(boxes)>0 || hasNeighbour>0)
 }
 
 function draw() {
@@ -94,25 +112,143 @@ function draw() {
     // coordinates.
     // The first parameter is the x-coordinate and the second is the Y
     stroke(255);
-    width = 720.0 / 4
-    height = 720.0 / 4
+    width = 720.0 / 4 - 20
+    height = 720.0 / 4 - 20
     fontSize = 120
 
     for (var i = 0; i < 4; i++) {
         for (var j = 0; j < 4; j++) {
             if (boxes[i][j] > 0) {
-                x = i * width
-                y = j * height
+                x = i * (width+20)
+                y = j * (height+20)
                 fill(numberToColor(boxes[i][j]))
-                rect(x, y, width, height)
+                rect(x+10, y+10, width, height)
                 textSize(fontSize)
                 textAlign(CENTER);
 
                 fill(bgColor)
-                text(str(boxes[i][j]), x + width / 2, y + height / 2 + fontSize / 4)
+                text(str(boxes[i][j]), 10 + x + width / 2, 10 + y + height / 2 + fontSize / 4)
             }
         }
     }
+}
+
+function deepCompare(a,b){
+    equalValues=0
+    for (var i = 0; i < 4; i++) {
+        for (var j = 0; j < 4; j++) {
+                if (a[i][j] == b [i][j]) {
+                    equalValues++
+                }
+            }
+        }
+    return (equalValues==16)
+}
+
+
+function yoloMove () {
+    oldstate=deepCopy(boxes)
+    keyListener(RIGHT_ARROW)
+
+    //check previous move
+    // if previous move is up
+    // make next move right
+    // vice versa
+
+    if (deepCompare(oldstate,boxes)) {
+        keyListener(UP_ARROW)
+        if (deepCompare(oldstate,boxes)) {
+            keyListener(LEFT_ARROW)
+            if (deepCompare(oldstate,boxes)) {
+                keyListener(DOWN_ARROW)
+            }
+        }
+    }
+}
+
+function hipsterMove () {
+    oldstate=deepCopy(boxes)
+
+    while (hipsterCount< 5) {
+        keyListener(RIGHT_ARROW)
+        hipsterCount++;
+    }
+
+    if (Math.random > 0.5) {
+        keyListener(UP_ARROW)
+    }
+    else{
+        keyListener(RIGHT_ARROW)
+    }
+
+    //check previous move
+    // if previous move is up
+    // make next move right
+    // vice versa
+
+    if (deepCompare(oldstate,boxes)) {
+        if (Math.random > 0.5) {
+            keyListener(UP_ARROW)
+        }
+        else{
+            keyListener(RIGHT_ARROW)
+        }
+
+        if (deepCompare(oldstate,boxes)) {
+            keyListener(LEFT_ARROW)
+            if (deepCompare(oldstate,boxes)) {
+                keyListener(DOWN_ARROW)
+            }
+        }
+    }
+}
+
+
+function randomMove(){
+    key=int(random()*4)
+    moves = [LEFT_ARROW, RIGHT_ARROW, UP_ARROW, DOWN_ARROW]
+    keyListener(moves[key])
+}
+
+function batchEval(){
+    console.log("Lets evaluate")
+    let totalpoints=0
+    for (var run = 0; run<1000;run++) {
+        while (canMove()) {
+            hipsterMove()
+        }
+        totalpoints+=points()
+        resetState()
+    }
+    console.log("hipsterMove: ", totalpoints)
+    totalpoints=0
+    for (var run = 0; run<1000;run++) {
+        while (canMove()) {
+            yoloMove()
+        }
+        totalpoints+=points()
+        resetState()
+    }
+    console.log("yoloMove: ", totalpoints)
+    totalpoints=0
+    for (var run = 0; run<1000;run++) {
+        while (canMove()) {
+            randomMove()
+        }
+        totalpoints+=points()
+        resetState()
+    }
+    console.log("randomMove: ", totalpoints)
+}
+
+function points(){
+    let point=0
+    for (var i = 0; i < 4; i++) {
+        for (var j = 0; j < 4; j++) {
+                point=point+boxes[i][j]
+            }
+        }
+    return point
 }
 
 // Planering
@@ -231,12 +367,9 @@ function isDone() {
 // hög epsilon minskande över tid
 
 
-
-
-
 function bestMove(N, R) {
-    let best = 0
-    let bestVal = 0
+    let best = -1
+    let bestVal = -int(1e10)
     for (let i in N) {
         if (N[i] == 0) {
             continue
@@ -244,22 +377,20 @@ function bestMove(N, R) {
         let val = R[i]/N[i]
         if (val > bestVal) {
             bestVal = val
-            best = i
+            best = -1
         }
     }
-    if (bestVal == 0) {
+    if (best == -1) {
         return int(random()*N.length)
     }
     return i
 }
 
 function getReward(s) {
-    // let flat = [].concat.apply([], boxes)
-    // Math.max(...flat)
-    b = deepCopy(boxes)
-    console.log(b, s)
-    console.log(nEmpty(b), nEmpty(s))
-    return nEmpty(b) - nEmpty(s)
+    let flat0 = [].concat.apply([], s)
+    let flat1 = [].concat.apply([], boxes)
+    return Math.max(...flat1)/Math.max(...flat0)
+    // return nEmpty(boxes) - nEmpty(s)
 }
 
 function deepCopy(s) {
@@ -273,22 +404,25 @@ function deepCopy(s) {
 function main() {
     console.log("running RL")
 
+
     // Monte Carlo algorithm
     N = {} // number of attempts
     R = {} // sum of reward after certain (s, a)-pair
 
+    // Used for:
     // Q(s, a) = R(s, a)/N(s, a)
 
 
-    nEpisodes = 10
+    nEpisodes = 10000
     eps = 0.05
+    let gamma = 0.9
+    gamme = 1.0
     moves = [LEFT_ARROW, RIGHT_ARROW, UP_ARROW, DOWN_ARROW]
 
 
     for (var i = 0 ; i < nEpisodes ; i++) {
         let memory = []
-        while (nEmpty() > 0) {
-            console.log(nEmpty())
+        while (nEmpty(boxes) > 0) {
             var a
             if (N[boxes] == undefined) {
                 a = int(random()*4)
@@ -303,7 +437,6 @@ function main() {
             let s = deepCopy(boxes)
             keyListener(moves[a])
             let r = getReward(s)
-            console.log('reward', r)
 
             memory.push([s, a, r])
 
@@ -312,7 +445,7 @@ function main() {
         reward = 0
         for (let i = memory.length - 1 ; i >= 0 ; i--) {
             let [s, a, r] = memory[i]
-            reward += r
+            reward = r + gamma*reward
             if (N[s] == undefined) {
                 N[s] = [0, 0, 0, 0]
                 R[s] = [0, 0, 0, 0]
@@ -320,7 +453,9 @@ function main() {
             N[s][a] += 1
             R[s][a] += reward
         }
+        console.log("epsiode done")
         console.log("Reward:", reward)
-        console.log(memory)
+        // console.log(memory)
+        resetState()
     }
 }
