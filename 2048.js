@@ -292,6 +292,7 @@ function mergeBoxes(xstart, xstop, dx, ystart, ystop, dy) {
 }
 
 function move(xstart, xstop, dx, ystart, ystop, dy) {
+    oldstate=deepCopy(boxes)
     for (var i = 0 ; i < 4 ; i++) {
         shiftBoxes(xstart, xstop, dx, ystart, ystop, dy)
     }
@@ -299,7 +300,9 @@ function move(xstart, xstop, dx, ystart, ystop, dy) {
     for (var i = 0 ; i < 4 ; i++) {
         shiftBoxes(xstart, xstop, dx, ystart, ystop, dy)
     }
-    addBox()
+    if (deepCompare(oldstate,boxes)) {
+        addBox()
+    }
 }
 
 function keyListener(keyCode) {
