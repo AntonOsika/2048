@@ -58,16 +58,6 @@ function rm() {
     randomMove()
 }
 
-function ym() {
-    setTimeout(ym, 100)
-    yoloMove()
-}
-
-function hm() {
-    setTimeout(hm, 50)
-    hipsterMove()
-}
-
 function numberToColor(number) {
     colors = ['rgba(238, 228, 218, 0.35)', '#eee4da', '#ede0c8', '#f2b179', '#f59563', '#f65e3b', '#edcf72', '#edc850', '#edc900', '#edc950']
 
@@ -300,7 +290,7 @@ function move(xstart, xstop, dx, ystart, ystop, dy) {
     for (var i = 0 ; i < 4 ; i++) {
         shiftBoxes(xstart, xstop, dx, ystart, ystop, dy)
     }
-    if (deepCompare(oldstate,boxes)) {
+    if (!deepCompare(oldstate,boxes)) {
         addBox()
     }
 }
@@ -404,16 +394,113 @@ function deepCopy(s) {
     return r
 }
 
+function MC() {
+        // Monte Carlo algorithm
+        N = {} // number of attempts
+        R = {} // sum of reward after certain (s, a)-pair
+
+        // Used for:
+        // Q(s, a) = R(s, a)/N(s, a)
+
+
+        nEpisodes = 10000
+        eps = 0.05
+        let gamma = 0.9
+        gamme = 1.0
+        moves = [LEFT_ARROW, RIGHT_ARROW, UP_ARROW, DOWN_ARROW]
+
+
+        for (var i = 0 ; i < nEpisodes ; i++) {
+            let memory = []
+            while (nEmpty(boxes) > 0) {
+                var a
+                if (N[boxes] == undefined) {
+                    a = int(random()*4)
+                } else {
+                    if (random() < eps) {
+                        a = int(random()*4)
+                    } else {
+                        a = bestMove(N[boxes], R[boxes])
+                    }
+                }
+
+                let s = deepCopy(boxes)
+                keyListener(moves[a])
+                let r = getReward(s)
+
+                memory.push([s, a, r])
+
+            }
+
+            reward = 0
+            for (let i = memory.length - 1 ; i >= 0 ; i--) {
+                let [s, a, r] = memory[i]
+                reward = r + gamma*reward
+                if (N[s] == undefined) {
+                    N[s] = [0, 0, 0, 0]
+                    R[s] = [0, 0, 0, 0]
+                }
+                N[s][a] += 1
+                R[s][a] += reward
+            }
+            console.log("epsiode done")
+            console.log("Reward:", reward)
+            // console.log(memory)
+            resetState()
+        }
+}
+
+function makeInput(data) {
+    var input = tf.tensor3d(data, [1, this.height, this.width])
+    var flatten = input.reshape([1, this.width*this.height])
+    input.dispose()
+    return flatten
+}
+
+function makeBatchInput(data, batch_size=64) {
+    var input = tf.tensor4d(data, [batch_size, 1, this.height, this.width])
+    var transposed = input.reshape([batch_size, this.width*this.height])
+    input.dispose()
+    return transposed
+}
+
+function make_model(lr) {
+    const model = tf.sequential();
+
+    model.add(tf.layers.dense({
+        inputShape: [this.width*this.height],
+        units: 64,
+        activation: 'relu',
+        kernelInitializer: 'varianceScaling'
+    }));
+    model.add(tf.layers.dense({
+        units: 64,
+        activation: 'relu',
+        kernelInitializer: 'varianceScaling'
+    }));
+    model.add(tf.layers.dense({
+        units: 64,
+        activation: 'relu',
+        kernelInitializer: 'varianceScaling'
+    }));
+    model.add(tf.layers.dense({
+        units:4,
+        kernelInitializer: 'VarianceScaling',
+        activation: 'linear'
+    }))
+    model.compile({loss: 'meanSquaredError', optimizer: tf.train.adam(lr)});
+    return model
+}
+
+
 function main() {
     console.log("running RL")
 
 
-    // Monte Carlo algorithm
-    N = {} // number of attempts
-    R = {} // sum of reward after certain (s, a)-pair
-
     // Used for:
     // Q(s, a) = R(s, a)/N(s, a)
+
+    // BIRGER: Define NN here that can take a "boxes" an return a vecotr
 
 
     nEpisodes = 10000
